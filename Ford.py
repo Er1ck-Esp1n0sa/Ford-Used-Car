@@ -15,7 +15,10 @@ st.title("Ford Used Car Listing")
 st.write("Autor: Erick Juarez Espinosa")
 st.write("Matricula: S20006728")
 st.header("Descripcion del sitio")
-st.markdown("Este sitio sirve para poder listar los autos de la marca ford con su año de fabricacion y su precio hasta la actualidad")
+st.markdown("Este sitio sirve para poder listar los autos de la marca ford"
+                                "con su año de fabricacion y su precio hasta la actualidad"
+                                "ademas de otras caracteristicas como el tipo de combustible"
+                                "la transmicion, etc")
 
 #--- LOGO ---#
 st.sidebar.image("img/logo.png")
@@ -83,8 +86,25 @@ com = st.sidebar.multiselect("Combustible", sorted(data["fuelType"].unique()))
 mod = st.sidebar.multiselect("Modelo auto", sorted(data["model"].unique()))
 
 if st.sidebar.button("Filtrar auto"):
-    st.markdown("Se selecciona el numero de goles de visitante y local y muesta los resultados de  partidos con ese numero de goles")
+    st.markdown("Se selecciona el modelo y el combustible y regresa una tabla con la disponibilidad de ese modelo de auto con ese tipo de combustible")
     mask = (df["fuelType"].isin(com)) & (df["model"].isin(mod))
     juegos_seleccionados = df[mask]
-    st.write("Goles Seleccionados:")
+    st.write("Modelo seleccionado:")
     st.write(juegos_seleccionados)
+
+
+modelo = data['model']
+precio = data['price']
+combustible = data["fuelType"]
+tranmicion = data["transmission"]
+año = data['year']
+
+if st.sidebar.checkbox('Dispercion de combustible'):
+    fig_perf_work=px.scatter(data,
+                        x=modelo,
+                        y=tranmicion,
+                        color=combustible,
+                        title="Muestra la variacion de los precios en los modelos",
+                        template="plotly_white")
+    fig_perf_work.update_layout(plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_perf_work)
