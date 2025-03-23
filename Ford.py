@@ -4,7 +4,14 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 
 #--- IMPORT DATA ---#
-df=pd.read_csv("dataset/ford.csv")
+try:
+    df = pd.read_csv("dataset/ford.csv")
+except FileNotFoundError:
+    st.error("Error: No se encontró el archivo de datos.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error al cargar los datos: {e}")
+    st.stop()
 
 #--- PAGE CONFIG ---#
 st.set_page_config(page_title="Ford Used Car Listing",
