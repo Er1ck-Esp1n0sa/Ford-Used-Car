@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import matplotlib.pyplot as plt
 
-#--- IMPORT DATA ---#
+#--- IMPORT DATA WITH ERROR HANDLING ---#
 try:
     df = pd.read_csv("dataset/ford.csv")
 except FileNotFoundError:
@@ -14,17 +14,16 @@ except Exception as e:
     st.stop()
 
 #--- PAGE CONFIG ---#
-st.set_page_config(page_title="Ford Used Car Listing",
-                    page_icon=":busts_in_silhouette:")
-
-st.title("Ford Used Car Listing")
+st.set_page_config(page_title="Ford Used Car Listing", page_icon=":car:") 
+st.title("Ford Used Car Listing")
 st.write("Autor: Erick Juarez Espinosa")
 st.write("Matricula: S20006728")
-st.header("Descripcion del sitio")
-st.markdown("Este sitio sirve para poder listar los autos de la marca ford"
-                                "con su año de fabricacion y su precio hasta la actualidad"
-                                "ademas de otras caracteristicas como el tipo de combustible"
-                                "la transmision, etc")
+
+st.header("Descripción del sitio")
+st.markdown(
+    "Este sitio permite listar autos de la marca Ford con su año de fabricación, "
+    "precio, tipo de combustible, transmisión, entre otras características."
+)
 
 #--- LOGO ---#
 st.sidebar.image("img/logo.png")
@@ -32,85 +31,78 @@ st.sidebar.markdown("##")
 
 #--- FUNCIONES ---#
 @st.cache_data
-def load_data(nrows):
-    data = df 
-    return data
+def load_data(nrows=None):
+    return df if nrows is None else df.head(nrows)
 
 def load_data_byname(name):
-    data = df
-    filtered_data_byname = data[data['model'].str.contains(name, case = False)]
-    return filtered_data_byname
+    filtered_data = df[df['model'].str.contains(name, case=False, na=False)]
+    return filtered_data
 
 def load_data_bytransmission(transmission):
-    data = df
-    filtered_data_bytras = data[data[ 'transmission' ] == transmission]
+    return df[df['transmission'] == transmission]
 
-    return filtered_data_bytras
-
+#--- DATA DISPLAY ---#
 st.header("Todos los carros")
-data_load_state = st.text('Data cargada . . .')
-data = load_data(100)
+data_load_state = st.text('Cargando datos...')
+data = load_data()
 
 #--- SIDEBAR FILTERS ---#
 sidebar = st.sidebar
-agree = sidebar.checkbox("Mostrar todos los Modelos de auntos")
-if agree:
+if sidebar.checkbox("Mostrar todos los modelos de autos"):
     st.dataframe(data)
 
-myname = sidebar.text_input('Modelo del auto :')
-btnRange = sidebar.button('Buscar auto')
+#--- FILTER BY MODEL ---#
+model_name = sidebar.text_input('Modelo del auto:')
+btn_search = sidebar.button('Buscar auto')
 
-if (myname):
-    if (btnRange):
-        filterbyname = load_data_byname(myname)
-        count_row = filterbyname.shape[0]
-        st.write(f"Total de autos : {count_row}")
-        st.dataframe(filterbyname)
+if btn_search:
+    filtered_data = load_data_byname(model_name)
+    count_row = filtered_data.shape[0]
+    if count_row > 0:
+        st.write(f"Total de autos encontrados: {count_row}")
+        st.dataframe(filtered_data)
+    else:
+        st.warning("No se encontraron autos con ese modelo.")
 
-selected_transmission = sidebar.selectbox("Seleccionar transmision: ", data ['transmission'].unique())
-btnFilterbyTransmission = sidebar.button('Filtrar por transmision')
+#--- FILTER BY TRANSMISSION ---#
+selected_transmission = sidebar.selectbox("Seleccionar transmisión:", df['transmission'].unique())
+btn_filter_transmission = sidebar.button('Filtrar por transmisión')
 
-if (btnFilterbyTransmission):
-    filterbyTransmission = load_data_bytransmission(selected_transmission)
-    count_row = filterbyTransmission.shape[0]
-    st.write(f"Total items : {count_row}")
-    st.dataframe(filterbyTransmission)
+if btn_filter_transmission:
+    filtered_data = load_data_bytransmission(selected_transmission)
+    count_row = filtered_data.shape[0]
+    if count_row > 0:
+        st.write(f"Total de autos encontrados: {count_row}")
+        st.dataframe(filtered_data)
+    else:
+        st.warning("No se encontraron autos con esa transmisión.")
 
-
-#--- GRAFICAS ---#
-com_precio = df['model']
-if st.sidebar.checkbox('Autos y sus Precios'):
-    fig, ax = plt.subplots()
+#--- GRÁFICOS ---#
+if st.sidebar.checkbox('Distribución de Precios por Modelo'):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    df.groupby('model')['price'].mean().plot(kind='bar', ax=ax)
     plt.xticks(rotation=90)
-    ax.hist(com_precio, bins=20, range=(0, 20))
     ax.set_xlabel('Modelo del auto')
-    ax.set_ylabel('Precio')
-    ax.set_title('Grafica que compara el precio de n autos')
+    ax.set_ylabel('Precio Promedio')
+    ax.set_title('Distribución de Precios por Modelo')
     st.pyplot(fig)
 
-com = st.sidebar.multiselect("Combustible", sorted(data["fuelType"].unique()))
-mod = st.sidebar.multiselect("Modelo auto", sorted(data["model"].unique()))
+#--- SCATTER PLOT: PRECIO VS AÑO ---#
+if st.sidebar.checkbox('Dispersión Precio vs Año'):
+    fig = px.scatter(df, x="year", y="price", color="fuelType",
+                     title="Variación del Precio según Año",
+                     template="plotly_white")
+    st.plotly_chart(fig)
 
-if st.sidebar.button("Filtrar auto"):
-    st.markdown("Se selecciona el modelo y el combustible y regresa una tabla con la disponibilidad de ese modelo de auto con ese tipo de combustible")
-    mask = (df["fuelType"].isin(com)) & (df["model"].isin(mod))
-    autos_filtrados = df[mask]
-    st.write("Modelo seleccionado:")
-    st.write(autos_filtrados)
+#--- MULTISELECT FILTRADO ---#
+selected_fuel = st.sidebar.multiselect("Tipo de Combustible", sorted(df["fuelType"].dropna().unique()))
+selected_model = st.sidebar.multiselect("Modelo del Auto", sorted(df["model"].dropna().unique()))
 
-
-modelo = data['model']
-precio = data['price']
-combustible = data["fuelType"]
-tranmicion = data["transmission"]
-año = data['year']
-
-if st.sidebar.checkbox('Dispercion de combustible'):
-    fig_perf_work=px.scatter(data,
-                        x=modelo,
-                        y=tranmicion,
-                        color=combustible,
-                        title="Muestra la variacion de los precios en los modelos",
-                        template="plotly_white")
-    fig_perf_work.update_layout(plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_perf_work)
+if st.sidebar.button("Filtrar Autos"):
+    st.markdown("Mostrando autos filtrados por modelo y tipo de combustible.")
+    mask = df["fuelType"].isin(selected_fuel) & df["model"].isin(selected_model)
+    filtered_data = df[mask]
+    if not filtered_data.empty:
+        st.dataframe(filtered_data)
+    else:
+        st.warning("No se encontraron autos con esos filtros.")
