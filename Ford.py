@@ -24,7 +24,7 @@ st.header("Descripcion del sitio")
 st.markdown("Este sitio sirve para poder listar los autos de la marca ford"
                                 "con su año de fabricacion y su precio hasta la actualidad"
                                 "ademas de otras caracteristicas como el tipo de combustible"
-                                "la transmicion, etc")
+                                "la transmision, etc")
 
 #--- LOGO ---#
 st.sidebar.image("img/logo.png")
@@ -67,8 +67,8 @@ if (myname):
         st.write(f"Total de autos : {count_row}")
         st.dataframe(filterbyname)
 
-selected_transmission = sidebar.selectbox("Seleccionar transmicion: ", data ['transmission'].unique())
-btnFilterbyTransmission = sidebar.button('Filtrar por transmicion')
+selected_transmission = sidebar.selectbox("Seleccionar transmision: ", data ['transmission'].unique())
+btnFilterbyTransmission = sidebar.button('Filtrar por transmision')
 
 if (btnFilterbyTransmission):
     filterbyTransmission = load_data_bytransmission(selected_transmission)
@@ -94,9 +94,9 @@ mod = st.sidebar.multiselect("Modelo auto", sorted(data["model"].unique()))
 if st.sidebar.button("Filtrar auto"):
     st.markdown("Se selecciona el modelo y el combustible y regresa una tabla con la disponibilidad de ese modelo de auto con ese tipo de combustible")
     mask = (df["fuelType"].isin(com)) & (df["model"].isin(mod))
-    juegos_seleccionados = df[mask]
+    autos_filtrados = df[mask]
     st.write("Modelo seleccionado:")
-    st.write(juegos_seleccionados)
+    st.write(autos_filtrados)
 
 
 modelo = data['model']
